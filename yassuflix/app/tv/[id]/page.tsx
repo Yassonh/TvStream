@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import WatchShowClient from "../../components/WatchShowClient";
 
-interface WatchPageProps {
+interface TVPageProps {
   params: Promise<{ id: string }>;
 }
 
@@ -17,10 +17,9 @@ interface ShowDetails {
   }[];
 }
 
-export default async function WatchShow({ params }: WatchPageProps) {
-  const { id } = await params; // ✅ await params
+export default async function WatchShow({ params }: TVPageProps) {
+  const { id } = await params;
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
   try {
@@ -49,8 +48,7 @@ export default async function WatchShow({ params }: WatchPageProps) {
         <WatchShowClient show={show} />
       </div>
     );
-  } catch (error) {
-    console.error("Failed to fetch show:", error);
+  } catch {
     notFound();
   }
 }

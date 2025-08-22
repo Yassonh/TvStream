@@ -3,9 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 interface MoviePageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
 
 interface MovieDetails {
@@ -13,9 +11,7 @@ interface MovieDetails {
 }
 
 export default async function MovieDetails({ params }: MoviePageProps) {
-  // Await params before using
   const { id } = await params;
-
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
@@ -56,8 +52,7 @@ export default async function MovieDetails({ params }: MoviePageProps) {
         </div>
       </div>
     );
-  } catch (error) {
-    console.error("Failed to fetch movie:", error);
+  } catch {
     notFound();
   }
 }
