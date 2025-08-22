@@ -1,23 +1,16 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-export default nextConfig;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Add image domains to allow them to be loaded
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'image.tmdb.org',
-        port: '',
-        pathname: '/t/p/**',
       },
     ],
   },
+  
+  // Your other configuration options go here.
 };
 
-module.exports = nextConfig;
+export default nextConfig;
