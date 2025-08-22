@@ -1,9 +1,8 @@
-// app/watch/[id]/page.tsx
 import { notFound } from "next/navigation";
 import WatchShowClient from "../../components/WatchShowClient";
 
 interface WatchPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string }; // <- plain object, not Promise
 }
 
 interface ShowDetails {
@@ -17,8 +16,9 @@ interface ShowDetails {
 }
 
 export default async function WatchShow({ params }: WatchPageProps) {
-  const { id } = await params;
+  const { id } = params; // no 'await'
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
   try {
@@ -31,7 +31,24 @@ export default async function WatchShow({ params }: WatchPageProps) {
 
     const show: ShowDetails = await response.json();
 
-    return <WatchShowClient show={show} />;
+    return (
+      <div className="flex flex-col items-center p-4 bg-gray-900 min-h-screen text-white">
+        <div className="w-full max-w-4xl mb-6 flex justify-start">
+          <a
+            href="/"
+            className="inline-block px-4 py-2 bg-gray-700 text-white font-semibold rounded-full shadow-md hover:bg-gray-600 transition-colors duration-300"
+          >
+            ← Back to Home
+          </a>
+        </div>
+
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">
+          {show.name}
+        </h1>
+
+        <WatchShowClient show={show} />
+      </div>
+    );
   } catch {
     notFound();
   }

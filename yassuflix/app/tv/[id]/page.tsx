@@ -1,11 +1,6 @@
 // app/tv/[id]/page.tsx
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import WatchShowClient from "../../components/WatchShowClient";
-
-interface TVPageProps {
-  params: Promise<{ id: string }>;
-}
+import WatchShowClient from "../../components/WatchShowClient"; // fixed relative path
 
 interface ShowDetails {
   name: string;
@@ -17,9 +12,15 @@ interface ShowDetails {
   }[];
 }
 
-export default async function WatchShow({ params }: TVPageProps) {
-  const { id } = await params;
+// params is now a promise
+interface WatchPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function WatchShow({ params }: WatchPageProps) {
+  const { id } = await params; // ✅ await params
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
   try {
@@ -32,22 +33,7 @@ export default async function WatchShow({ params }: TVPageProps) {
 
     const show: ShowDetails = await response.json();
 
-    return (
-      <div className="flex flex-col items-center p-4 bg-gray-900 min-h-screen text-white">
-        <div className="w-full max-w-4xl mb-6 flex justify-start">
-          <Link
-            href="/"
-            className="inline-block px-4 py-2 bg-gray-700 text-white font-semibold rounded-full shadow-md hover:bg-gray-600 transition-colors duration-300"
-          >
-            ← Back to Home
-          </Link>
-        </div>
-
-        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">{show.name}</h1>
-
-        <WatchShowClient show={show} />
-      </div>
-    );
+    return <WatchShowClient show={show} />;
   } catch {
     notFound();
   }
