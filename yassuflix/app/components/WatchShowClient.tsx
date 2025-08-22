@@ -2,8 +2,27 @@
 
 import { useState } from "react";
 
-export default function WatchShowClient({ show }) {
-  const [selectedSeason, setSelectedSeason] = useState(1);
+interface ShowDetails {
+  id: number;
+  name: string;
+  seasons: {
+    id: number;
+    season_number: number;
+    episode_count: number;
+  }[];
+}
+
+interface WatchShowClientProps {
+  show: ShowDetails;
+}
+
+export default function WatchShowClient({ show }: WatchShowClientProps) {
+  // Find the last season that has a season number greater than 0
+  const lastSeason = show.seasons?.slice()?.reverse()?.find(s => s.season_number > 0);
+  const initialSeason = lastSeason?.season_number || 1;
+  const initialEpisodes = lastSeason?.episode_count || 1;
+
+  const [selectedSeason, setSelectedSeason] = useState(initialSeason);
   const [selectedEpisode, setSelectedEpisode] = useState(1);
 
   const embedUrl = `https://vidsrc.to/embed/tv/${show.id}/${selectedSeason}/${selectedEpisode}`;
@@ -28,20 +47,22 @@ export default function WatchShowClient({ show }) {
       <div className="w-full max-w-4xl mb-6">
         <h2 className="text-xl font-bold mb-2">Select Season</h2>
         <div className="flex flex-wrap gap-2">
-          {seasons.map(season => (
-            <button
-              key={season.id}
-              onClick={() => {
-                setSelectedSeason(season.season_number);
-                setSelectedEpisode(1);
-              }}
-              className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
-                selectedSeason === season.season_number ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              {`S${season.season_number}`}
-            </button>
-          ))}
+          {seasons
+            .filter(season => season.season_number > 0)
+            .map(season => (
+              <button
+                key={season.id}
+                onClick={() => {
+                  setSelectedSeason(season.season_number);
+                  setSelectedEpisode(1);
+                }}
+                className={`px-4 py-2 rounded-full font-semibold transition-colors duration-300 ${
+                  selectedSeason === season.season_number ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {`S${season.season_number}`}
+              </button>
+            ))}
         </div>
       </div>
 

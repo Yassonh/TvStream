@@ -3,26 +3,62 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+
+// Define interfaces for the data we expect from the API
+interface Movie {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+  vote_average: number;
+}
+
+interface TVShow {
+  id: number;
+  name: string;
+  poster_path: string;
+  first_air_date: string;
+  vote_average: number;
+}
+
+// Union type for the content, allowing it to be either a Movie or a TVShow
+type Content = Movie | TVShow;
 
 export default function Home() {
-  const [content, setContent] = useState([]);
+  const [content, setContent] = useState<Content[]>([]);
   const [contentType, setContentType] = useState("movie"); // "movie" or "tv"
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null); // Reset error state on new fetch
       const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+
       const url = search
         ? `https://api.themoviedb.org/3/search/${contentType}?api_key=${API_KEY}&query=${search}&page=${page}`
         : `https://api.themoviedb.org/3/${contentType}/popular?api_key=${API_KEY}&page=${page}`;
 
-      const response = await fetch(url, { next: { revalidate: 3600 } });
-      const data = await response.json();
-      setContent(data.results);
-      setLoading(false);
+      try {
+        const response = await fetch(url, { next: { revalidate: 3600 } });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch data.");
+        }
+
+        const data = await response.json();
+        setContent(data.results);
+      } catch (e) {
+        // We'll set an error state instead of using notFound() here,
+        // as this is a client component and we want to display an error message.
+        setError("Failed to load content. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     const handler = setTimeout(() => {
@@ -44,7 +80,7 @@ export default function Home() {
     }
   };
 
-  const handleContentTypeChange = (type) => {
+  const handleContentTypeChange = (type: string) => {
     setContentType(type);
     setPage(1);
     setSearch("");
@@ -97,26 +133,37 @@ export default function Home() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
+        ) : error ? (
+            <p className="text-center text-red-400 col-span-full py-10">{error}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
             {content.length > 0 ? (
               content.map((item) => (
                 <Link href={`/${contentType}/${item.id}`} key={item.id} className="block group rounded-xl overflow-hidden transform transition-transform duration-300 hover:scale-105 hover:shadow-xl relative">
                   <div className="aspect-[2/3] w-full">
-                    <Image
-                      src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                      alt={item.title || item.name}
-                      width={500}
-                      height={750}
-                      className="object-cover w-full h-full"
-                      priority
-                    />
+                    {/* Check if poster_path exists before rendering the image */}
+                    {item.poster_path ? (
+                      <Image
+                        src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                        alt={"name" in item ? item.name : item.title}
+                        width={500}
+                        height={750}
+                        className="object-cover w-full h-full"
+                        priority
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center bg-gray-800 w-full h-full text-gray-500 text-center px-4">
+                        Image not available
+                      </div>
+                    )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80"></div>
                   <div className="p-3 absolute bottom-0 left-0 right-0">
-                    <h2 className="text-lg font-semibold text-white truncate">{item.title || item.name}</h2>
+                    <h2 className="text-lg font-semibold text-white truncate">{"name" in item ? item.name : item.title}</h2>
                     <p className="text-sm text-gray-400">
-                      {item.release_date || item.first_air_date ? new Date(item.release_date || item.first_air_date).getFullYear() : "N/A"}
+                      {"first_air_date" in item
+                        ? (new Date(item.first_air_date).getFullYear() || "N/A")
+                        : (new Date(item.release_date).getFullYear() || "N/A")}
                     </p>
                   </div>
                 </Link>
