@@ -1,25 +1,24 @@
-// Import necessary modules from Next.js
+// app/movie/[id]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-// Define the type for the params object
 interface MoviePageProps {
-  // Now params is a Promise that resolves to an object with the 'id'
   params: Promise<{
     id: string;
   }>;
 }
 
-// Define the type for the movie details object
 interface MovieDetails {
   title: string;
 }
 
-// The main component for the movie watching page.
 export default async function MovieDetails({ params }: MoviePageProps) {
-  // Await the params object to resolve the promise before destructuring.
+  // Await params before using
   const { id } = await params;
+
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+  if (!API_KEY) throw new Error("Missing TMDB API key");
+
   const embedUrl = `https://vidsrc.to/embed/movie/${id}`;
 
   try {
@@ -28,27 +27,28 @@ export default async function MovieDetails({ params }: MoviePageProps) {
       { next: { revalidate: 3600 } }
     );
 
-    // If the response is not ok, show a 404 page
-    if (!response.ok) {
-      notFound();
-    }
+    if (!response.ok) notFound();
 
     const movie: MovieDetails = await response.json();
 
     return (
       <div className="flex flex-col items-center p-4 bg-gray-900 min-h-screen text-white">
         <div className="w-full max-w-4xl mb-6 flex justify-start">
-          <Link href="/" passHref>
-            <div className="inline-block px-4 py-2 bg-gray-700 text-white font-semibold rounded-full shadow-md hover:bg-gray-600 transition-colors duration-300">
-              ← Back to Home
-            </div>
+          <Link
+            href="/"
+            className="inline-block px-4 py-2 bg-gray-700 text-white font-semibold rounded-full shadow-md hover:bg-gray-600 transition-colors duration-300"
+          >
+            ← Back to Home
           </Link>
         </div>
+
         <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">{movie.title}</h1>
-        <div className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg">
-          <div className="relative" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
+
+        <div className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg mb-6">
+          <div className="relative" style={{ paddingTop: "56.25%" }}>
             <iframe
               src={embedUrl}
+              title={movie.title}
               className="absolute top-0 left-0 w-full h-full border-none"
               allowFullScreen
             />
@@ -57,7 +57,7 @@ export default async function MovieDetails({ params }: MoviePageProps) {
       </div>
     );
   } catch (error) {
-    // Catch any network or parsing errors and show a 404 page.
+    console.error("Failed to fetch movie:", error);
     notFound();
   }
 }
