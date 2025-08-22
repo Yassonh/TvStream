@@ -1,24 +1,17 @@
+// app/watch/[id]/page.tsx
 import { notFound } from "next/navigation";
 import WatchShowClient from "../../components/WatchShowClient";
-
-interface WatchPageProps {
-  params: { id: string }; // <- plain object, not Promise
-}
+import { PageProps } from "next/app"; // import if using Next.js types
 
 interface ShowDetails {
   name: string;
   id: number;
-  seasons: {
-    id: number;
-    season_number: number;
-    episode_count: number;
-  }[];
+  seasons: { id: number; season_number: number; episode_count: number }[];
 }
 
-export default async function WatchShow({ params }: WatchPageProps) {
-  const { id } = params; // no 'await'
+export default async function WatchShow({ params }: PageProps) {
+  const { id } = params as { id: string }; // cast params
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
   try {
@@ -26,7 +19,6 @@ export default async function WatchShow({ params }: WatchPageProps) {
       `https://api.themoviedb.org/3/tv/${id}?api_key=${API_KEY}`,
       { next: { revalidate: 3600 } }
     );
-
     if (!response.ok) notFound();
 
     const show: ShowDetails = await response.json();
@@ -42,9 +34,7 @@ export default async function WatchShow({ params }: WatchPageProps) {
           </a>
         </div>
 
-        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">
-          {show.name}
-        </h1>
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">{show.name}</h1>
 
         <WatchShowClient show={show} />
       </div>
