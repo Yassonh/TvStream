@@ -1,29 +1,39 @@
 // Import necessary modules from Next.js
 import Link from "next/link";
 import { notFound } from "next/navigation";
+// Import the client component that will render the video player
+import WatchShowClient from "../../components/WatchShowClient";
 
-// Define the type for the params object to fix the TypeScript error
+// Define the type for the params object
 interface WatchPageProps {
-  params: {
+  // The 'params' object is now a Promise in Next.js 15.
+  // We need to update the interface to reflect this change.
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-// Define the type for the movie details object
-interface MovieDetails {
-  title: string;
+// Define the type for the show details object
+interface ShowDetails {
+  name: string;
+  id: number;
+  seasons: {
+    id: number;
+    season_number: number;
+    episode_count: number;
+  }[];
 }
 
-// The main component for the movie watching page.
-export default async function WatchMovie({ params }: WatchPageProps) {
-  // Destructure the id from the typed params object.
-  const { id } = params;
+// The main component for the TV show watching page.
+// This is a server component, responsible for data fetching.
+export default async function WatchShow({ params }: WatchPageProps) {
+  // Await the params object to resolve the promise before destructuring.
+  const { id } = await params;
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-  const embedUrl = `https://vidsrc.to/embed/movie/${id}`;
 
   try {
     const response = await fetch(
-      `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`,
+      `https://api.themoviedb.org/3/tv/${id}?api_key=${API_KEY}`,
       { next: { revalidate: 3600 } }
     );
 
@@ -32,7 +42,7 @@ export default async function WatchMovie({ params }: WatchPageProps) {
       notFound();
     }
 
-    const movie: MovieDetails = await response.json();
+    const show: ShowDetails = await response.json();
 
     return (
       <div className="flex flex-col items-center p-4 bg-gray-900 min-h-screen text-white">
@@ -43,16 +53,9 @@ export default async function WatchMovie({ params }: WatchPageProps) {
             </div>
           </Link>
         </div>
-        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">{movie.title}</h1>
-        <div className="w-full max-w-4xl rounded-lg overflow-hidden shadow-lg">
-          <div className="relative" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
-            <iframe
-              src={embedUrl}
-              className="absolute top-0 left-0 w-full h-full border-none"
-              allowFullScreen
-            />
-          </div>
-        </div>
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 text-center">{show.name}</h1>
+        {/* Pass the fetched show data to the client component */}
+        <WatchShowClient show={show} />
       </div>
     );
   } catch (error) {
