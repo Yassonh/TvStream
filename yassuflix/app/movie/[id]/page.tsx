@@ -1,19 +1,13 @@
-// app/movie/[id]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-interface MoviePageProps {
-  params: Promise<{ id: string }>; // ✅ params is a promise
-}
 
 interface MovieDetails {
   title: string;
 }
 
-export default async function MovieDetails({ params }: MoviePageProps) {
-  const { id } = await params; // ✅ await params
+export default async function MovieDetails({ params }: { params: { id: string } }) {
+  const { id } = params;
   const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-
   if (!API_KEY) throw new Error("Missing TMDB API key");
 
   try {
@@ -21,7 +15,6 @@ export default async function MovieDetails({ params }: MoviePageProps) {
       `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`,
       { next: { revalidate: 3600 } }
     );
-
     if (!response.ok) notFound();
 
     const movie: MovieDetails = await response.json();
